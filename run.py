@@ -48,6 +48,7 @@ def main():
                       help='Limit the number of examples to evaluate on.')
 
     training_args, args = argp.parse_args_into_dataclasses()
+    training_args.save_total_limit = 8
 
     # Dataset selection
     if args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
@@ -156,7 +157,7 @@ def main():
     )
     # Train and/or evaluate
     if training_args.do_train:
-        trainer.train()
+        trainer.train(resume_from_checkpoint=True)
         trainer.save_model()
         # If you want to customize the way the loss is computed, you should subclass Trainer and override the "compute_loss"
         # method (see https://huggingface.co/transformers/_modules/transformers/trainer.html#Trainer.compute_loss).
