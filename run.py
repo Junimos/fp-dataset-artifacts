@@ -16,7 +16,6 @@ class debiasingTrainer(Trainer):
         self.weak_model = weak_model
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        print("in compute_loss")
         #initialize funcs and relevant data
         loss_func = torch.nn.NLLLoss()
         log_softmax = torch.nn.LogSoftmax(dim=0)
@@ -101,11 +100,11 @@ def main():
                      'nli': AutoModelForSequenceClassification}
     model_class = model_classes[args.task]
     # Initialize the model and tokenizer from the specified pretrained model/checkpoint
-    model = model_class.from_pretrained(args.model, **task_kwargs)
+    model = model_class.from_pretrained(args.model, **task_kwargs).to(torch.device('cuda:0'))
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
 
     #load bad model
-    weak_model = model_class.from_pretrained('./bad_0.5_premise_trained_model', **task_kwargs)
+    weak_model = model_class.from_pretrained('./bad_0.5_premise_trained_model', **task_kwargs).to(torch.device('cuda:0'))
     weak_model.requires_grad = False
 
     # Select the dataset preprocessing function (these functions are defined in helpers.py)
