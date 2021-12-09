@@ -5,7 +5,7 @@ from collections import Counter
 def analyze_eval():
 
     #opening eval file
-    file_name = "no_premise_eval_output/eval_predictions.jsonl"
+    file_name = "bad_0.5_eval_output/eval_predictions.jsonl"
     data = open(file_name)
 
     #declare vars

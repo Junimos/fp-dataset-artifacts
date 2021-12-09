@@ -5,9 +5,34 @@ from helpers import prepare_dataset_nli, prepare_train_dataset_qa, \
     prepare_validation_dataset_qa, QuestionAnsweringTrainer, compute_accuracy
 import os
 import json
+import torch
 
 NUM_PREPROCESSING_WORKERS = 2
 
+#TODO: subclass the model to contain the weak model too
+class debiasingTrainer(Trainer):
+    def __init__(self, weak_model, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.weak_model = weak_model
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        print("in compute_loss")
+        #initialize funcs and relevant data
+        loss_func = torch.nn.NLLLoss()
+        log_softmax = torch.nn.LogSoftmax(dim=0)
+        labels = inputs['labels']
+
+        #work on weak data
+        weak_loss, weak_outputs = super().compute_loss(self.weak_model, inputs, True)
+        weak_outputs = log_softmax(weak_outputs.logits)
+
+        #work on model data
+        loss, outputs = super().compute_loss(model, inputs, True)
+        outputs = log_softmax(outputs.logits)
+        outputs = log_softmax(outputs + weak_outputs)
+
+        #return the loss
+        return loss_func(outputs, labels)
 
 def main():
     argp = HfArgumentParser(TrainingArguments)
@@ -48,7 +73,7 @@ def main():
                       help='Limit the number of examples to evaluate on.')
 
     training_args, args = argp.parse_args_into_dataclasses()
-    training_args.save_total_limit = 8
+    training_args.save_total_limit = 3
 
     # Dataset selection
     if args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
@@ -78,6 +103,10 @@ def main():
     # Initialize the model and tokenizer from the specified pretrained model/checkpoint
     model = model_class.from_pretrained(args.model, **task_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
+
+    #load bad model
+    weak_model = model_class.from_pretrained('./bad_0.5_premise_trained_model', **task_kwargs)
+    weak_model.requires_grad = False
 
     # Select the dataset preprocessing function (these functions are defined in helpers.py)
     if args.task == 'qa':
@@ -121,7 +150,7 @@ def main():
         )
 
     # Select the training configuration
-    trainer_class = Trainer
+    trainer_class = debiasingTrainer
     eval_kwargs = {}
     # If you want to use custom metrics, you should define your own "compute_metrics" function.
     # For an example of a valid compute_metrics function, see compute_accuracy in helpers.py.
@@ -147,8 +176,10 @@ def main():
         return compute_metrics(eval_preds)
 
     # Initialize the Trainer object with the specified arguments and the model and dataset we loaded above
+    #TODO: pass the bad model as an argument
     trainer = trainer_class(
         model=model,
+        weak_model = weak_model,
         args=training_args,
         train_dataset=train_dataset_featurized,
         eval_dataset=eval_dataset_featurized,
