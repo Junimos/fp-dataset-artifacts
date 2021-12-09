@@ -176,15 +176,26 @@ def main():
 
     # Initialize the Trainer object with the specified arguments and the model and dataset we loaded above
     #TODO: pass the bad model as an argument
-    trainer = trainer_class(
-        model=model,
-        weak_model = weak_model,
-        args=training_args,
-        train_dataset=train_dataset_featurized,
-        eval_dataset=eval_dataset_featurized,
-        tokenizer=tokenizer,
-        compute_metrics=compute_metrics_and_store_predictions
-    )
+    if training_args.do_train:
+        trainer = trainer_class(
+            model=model,
+            weak_model = weak_model,
+            args=training_args,
+            train_dataset=train_dataset_featurized,
+            eval_dataset=eval_dataset_featurized,
+            tokenizer=tokenizer,
+            compute_metrics=compute_metrics_and_store_predictions
+        )
+    elif training_args.do_eval:
+        trainer = trainer_class(
+            model=model,
+            args=training_args,
+            train_dataset=train_dataset_featurized,
+            eval_dataset=eval_dataset_featurized,
+            tokenizer=tokenizer,
+            compute_metrics=compute_metrics_and_store_predictions
+        )
+        
     # Train and/or evaluate
     if training_args.do_train:
         #trainer.train(resume_from_checkpoint=True)
