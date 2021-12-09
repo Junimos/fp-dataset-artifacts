@@ -104,7 +104,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
 
     #load bad model
-    weak_model = model_class.from_pretrained('./bad_0.5_premise_trained_model', **task_kwargs).to(torch.device('cuda:0'))
+    weak_model = model_class.from_pretrained('./bad_0.5_nopremises_trained_model', **task_kwargs).to(torch.device('cuda:0'))
     weak_model.requires_grad = False
 
     # Select the dataset preprocessing function (these functions are defined in helpers.py)
