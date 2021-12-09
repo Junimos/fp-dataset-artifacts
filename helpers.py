@@ -15,8 +15,8 @@ def prepare_dataset_nli(examples, tokenizer, max_seq_length=None):
 
     tokenized_examples = tokenizer(
         examples['premise'],
-        #["" for x in range(len(examples['premise']))],
-        examples['hypothesis'],
+        ["" for x in range(len(examples['premise']))],
+        #examples['hypothesis'],
         truncation=True,
         max_length=max_seq_length,
         padding='max_length'
